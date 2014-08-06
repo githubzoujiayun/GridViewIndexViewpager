@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="GridViewIndexViewpagerView">
+
+        <!-- 整个gridview的背景 -->
+        <attr name="gridview_background" format="reference" />
+        <!-- gridview item 文本背景 -->
+        <attr name="gridview_item_textview_background" format="reference" />
+         <!-- gridview item 文本字体颜色 -->
+        <attr name="gridview_item_textview_textcolor" format="reference|color" />
+        <!-- 每页显示导航索引数 -->
+        <attr name = "gridview_pagecount" format="integer" />
+    </declare-styleable>
+
+</resources>
