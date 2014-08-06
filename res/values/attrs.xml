@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <declare-styleable name="GridViewIndexViewpagerView">
+    <declare-styleable name="TabIndexFragment">
 
         <!-- 整个gridview的背景 -->
         <attr name="gridview_background" format="reference" />

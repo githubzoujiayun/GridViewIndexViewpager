@@ -10,15 +10,19 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.GridView;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 /**
  * 利用gridview制作viewpager导航索引
@@ -26,32 +30,21 @@ import android.widget.RelativeLayout;
  * @author jing
  * 
  */
-public class GridViewIndexViewpagerView extends RelativeLayout {
-	public class MainTabOnItemClickListener implements OnItemClickListener {
-		GridViewAdapter tabAdapter;
+public class TabIndexFragment extends RelativeLayout {
+	public class TvClickListener implements OnClickListener {
 
-		public MainTabOnItemClickListener(GridViewAdapter tabAdapter,
-				Fragment[] fragments) {
-			this.tabAdapter = tabAdapter;
-			switchTab(0);
+		private int index;
+
+		public TvClickListener(int index) {
+			this.index = index;
 		}
 
 		@Override
-		public void onItemClick(AdapterView<?> parent, View view, int position,
-				long id) {
-			if (oldTabIndex != position) {
-				switchTab(position);
-				
+		public void onClick(View v) {
+			if (oldTabIndex != index) {
+				switchTab(index);
 			}
-		}
 
-		public void switchTab(int index) {
-			tabAdapter.setSelected(oldTabIndex, index);
-			showFragment(oldTabIndex, index);
-			if (onTabSwitch != null) {
-				onTabSwitch.onSwitch(index);
-			}
-			oldTabIndex = index;
 		}
 
 	}
@@ -102,7 +95,6 @@ public class GridViewIndexViewpagerView extends RelativeLayout {
 	Drawable gridViewBackground, gridViewItemTextViewBackground;
 	ColorStateList gridviewItemTextViewTextColor;
 	int gridViewPageCount;
-	private HorizontalScrollView hsv;
 	/**
 	 * 在状态恢复的时候会用到
 	 */
@@ -112,32 +104,36 @@ public class GridViewIndexViewpagerView extends RelativeLayout {
 	 */
 	OnTabSwitch onTabSwitch;
 
-	private MainTabOnItemClickListener itemClickListener;
+	private LinearLayout layout;
 
-	public GridViewIndexViewpagerView(Context context) {
+	private TextView[] tvItem;
+
+	public TabIndexFragment(Context context) {
 		super(context);
 	}
 
-	public GridViewIndexViewpagerView(Context context, AttributeSet attrs) {
+	public TabIndexFragment(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		this.context = context;
 		// 获得xml数据
 		TypedArray a = context.obtainStyledAttributes(attrs,
-				R.styleable.GridViewIndexViewpagerView);
+				R.styleable.TabIndexFragment);
 		gridViewBackground = a
-				.getDrawable(R.styleable.GridViewIndexViewpagerView_gridview_background);
+				.getDrawable(R.styleable.TabIndexFragment_gridview_background);
 		gridViewItemTextViewBackground = a
-				.getDrawable(R.styleable.GridViewIndexViewpagerView_gridview_item_textview_background);
+				.getDrawable(R.styleable.TabIndexFragment_gridview_item_textview_background);
 		gridviewItemTextViewTextColor = a
-				.getColorStateList(R.styleable.GridViewIndexViewpagerView_gridview_item_textview_textcolor);
+				.getColorStateList(R.styleable.TabIndexFragment_gridview_item_textview_textcolor);
 		gridViewPageCount = a.getInt(
-				R.styleable.GridViewIndexViewpagerView_gridview_pagecount, -1);
+				R.styleable.TabIndexFragment_gridview_pagecount, -1);
 		a.recycle();
 		// 获得组件
 		View view = LayoutInflater.from(context).inflate(R.layout.view_layout,
 				null);
-		hsv = (HorizontalScrollView) view.findViewById(R.id.view_hsv);
-		gridView = (GridView) view.findViewById(R.id.view_gv);
+		// hsv = (HorizontalScrollView) view.findViewById(R.id.view_hsv);
+		// gridView = (GridView) view.findViewById(R.id.view_gv);
+		layout = (LinearLayout) view.findViewById(R.id.view_linearlayout);
+		layout.setBackgroundDrawable(gridViewBackground);
 		this.addView(view);
 
 	}
@@ -147,7 +143,7 @@ public class GridViewIndexViewpagerView extends RelativeLayout {
 		super.onRestoreInstanceState(state);
 		SavedState ss = (SavedState) state;
 		oldTabIndex = ss.tabIndex;
-		itemClickListener.switchTab(oldTabIndex);
+		switchTab(oldTabIndex);
 	}
 
 	@Override
@@ -160,7 +156,7 @@ public class GridViewIndexViewpagerView extends RelativeLayout {
 	}
 
 	private void printLog(String string) {
-		// Log.d("GridViewIndexViewpagerView", string);
+		// Log.d("TabIndexFragment", string);
 	}
 
 	private void setFragment(Fragment[] fragments,
@@ -177,29 +173,57 @@ public class GridViewIndexViewpagerView extends RelativeLayout {
 		// showFragment(0);
 	}
 
-	private void setGridView(int[] drawableIDs, String[] textValues,
-			Fragment[] fragments) {
-		// gridviewAdapter
-		GridViewAdapter tabAdapter = new GridViewAdapter(context, drawableIDs,
-				textValues, gridViewPageCount, gridViewItemTextViewBackground,
-				gridviewItemTextViewTextColor);
-		// tabAdapter.setSelected(0);
-		// gridview
-		LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-				tabAdapter.getAllColumnsWidth(),
-				LinearLayout.LayoutParams.WRAP_CONTENT);
-		gridView.setLayoutParams(params);
-		gridView.setNumColumns(tabAdapter.getAllColumnsNum());
-		gridView.setGravity(Gravity.CENTER);
-		gridView.setVerticalSpacing(0);
-		gridView.setAdapter(tabAdapter);
-		if (gridViewBackground != null) {
-			gridView.setBackgroundDrawable(gridViewBackground);
+	public void setOnTabSwitch(OnTabSwitch onTabSwitch) {
+		this.onTabSwitch = onTabSwitch;
+	}
+
+	private void switchTab(int index) {
+		setSelectTabView(oldTabIndex, index);
+		showFragment(oldTabIndex, index);
+		if (onTabSwitch != null) {
+			onTabSwitch.onSwitch(index);
 		}
-		// gridview事件
-		itemClickListener = new MainTabOnItemClickListener(tabAdapter,
-				fragments);
-		gridView.setOnItemClickListener(itemClickListener);
+		oldTabIndex = index;
+	}
+
+	private void setTabView(int[] drawableIDs, String[] textValues,
+			Fragment[] fragments, int pageSize2) {
+		if (textValues != null && drawableIDs.length != textValues.length) {
+			throw new RuntimeException("drawableID数与textValue数不一致");
+		}
+		pageSize2 = pageSize2 < 1 ? 1 : pageSize2;
+		pageSize2 = pageSize2 > drawableIDs.length ? drawableIDs.length
+				: pageSize2;
+		// 设置每个导航索引的宽高
+		DisplayMetrics dm = new DisplayMetrics();
+		WindowManager wm = (WindowManager) context
+				.getSystemService(Context.WINDOW_SERVICE);
+		wm.getDefaultDisplay().getMetrics(dm);
+		int itemWidth = (int) (dm.widthPixels / pageSize2);
+		// 初始化导航索引
+		tvItem = new TextView[drawableIDs.length];
+		android.widget.LinearLayout.LayoutParams parms = new LinearLayout.LayoutParams(
+				itemWidth,
+				android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+		for (int i = 0; i < drawableIDs.length; i++) {
+			int drawableID = drawableIDs[i];
+			String textValue = textValues[i];
+			tvItem[i] = new TextView(context);
+			// 设置ImageView宽高
+			tvItem[i].setLayoutParams(parms);
+			tvItem[i].setText(textValue);
+			Drawable drawable = context.getResources().getDrawable(drawableID);
+			drawable.setBounds(0, 0, drawable.getMinimumWidth(),
+					drawable.getMinimumHeight());
+			tvItem[i].setCompoundDrawablesWithIntrinsicBounds(null, drawable,
+					null, null);
+			// 要从新设置
+			tvItem[i].setGravity(Gravity.CENTER);
+			// tvItem[i].setBackgroundDrawable(gridViewItemTextViewBackground);
+			tvItem[i].setTextColor(gridviewItemTextViewTextColor);
+			tvItem[i].setOnClickListener(new TvClickListener(i));
+			layout.addView(tvItem[i]);
+		}
 
 	}
 
@@ -212,14 +236,15 @@ public class GridViewIndexViewpagerView extends RelativeLayout {
 	 * @param pagerAdapter
 	 */
 	public void setViewData(int[] drawableIDs, String[] textValues,
-			FragmentManager fragmentManager, Fragment[] fragments) {
+			FragmentManager fragmentManager, Fragment[] fragments, int pageSize) {
 
 		printLog("setViewData");
 		if (fragments.length < drawableIDs.length) {
 			throw new RuntimeException("页面数小于导航索引数");
 		}
 		setFragment(fragments, fragmentManager);
-		setGridView(drawableIDs, textValues, fragments);
+		setTabView(drawableIDs, textValues, fragments, pageSize);
+		switchTab(0);
 	}
 
 	private void showFragment(int oldindex, int index) {
@@ -230,8 +255,8 @@ public class GridViewIndexViewpagerView extends RelativeLayout {
 				transaction.hide(fragments[oldindex]);
 			}
 			transaction.add(R.id.view_frame, fragments[index]);
-//			transaction
-//					.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+			// transaction
+			// .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
 			transaction.show(fragments[index]);
 			transaction.commit();
 		} else {
@@ -240,10 +265,19 @@ public class GridViewIndexViewpagerView extends RelativeLayout {
 			if (oldindex != -1) {
 				transaction.hide(fragments[oldindex]);
 			}
-//			transaction
-//					.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+			// transaction
+			// .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
 			transaction.show(fragments[index]);
 			transaction.commit();
 		}
+	}
+
+	private void setSelectTabView(int oldindex, int index) {
+		if (oldindex != -1) {
+			tvItem[oldindex].setSelected(false);
+			tvItem[oldindex].setBackgroundDrawable(null);
+		}
+		tvItem[index].setSelected(true);// 选中的效果}
+		tvItem[index].setBackgroundDrawable(gridViewItemTextViewBackground);
 	}
 }
